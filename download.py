@@ -15,12 +15,19 @@ def get_soup(query_url):
     s = binascii.hexlify(query_url.encode()).decode("utf-8")
     fname = os.path.join('cache', s)
 
+    # Don't cache page/#, which are the listings of the transcriptions and can change.
+    if "page" in query_url:
+        print(f'Getting listing {query_url}')
+        if os.path.exists(fname):
+            os.remove(fname)
+
     if not os.path.exists(fname):
+        print(f'caching call to {query_url}')
         raw = get(query_url).content.decode('utf-8')
         with open(fname, 'w') as f:
            f.write(raw)
-
-    print(f'{query_url} => {fname}')
+    else:
+        print(f'cache hit for {query_url}')
 
     raw = None
     with open(fname, 'r') as f:
@@ -31,7 +38,6 @@ def get_soup(query_url):
 
 def get_links(soup):
     anchors = soup.find_all('a', {'itemprop': 'url'})
-
     def is_transcription(a):
         href = a['href']
         if href.endswith('-transcripcion'):
